@@ -18,16 +18,6 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   secret: process.env.AUTH_SECRET!,
-  cookies: {
-    sessionToken: {
-      name: "next-auth.session-token",
-      options: {
-        path: "/",
-        httpOnly: true,
-        secure: true,
-      },
-    },
-  },
   callbacks: {
     session(params: {
       session: Session;

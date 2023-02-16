@@ -56,9 +56,15 @@ export default async function handler(
       });
       if (nextToken) {
         const resCookies = new Cookies(req, res);
-        resCookies.set("next-auth.session-token", nextToken, {
-          path: "/",
-        });
+        resCookies.set(
+          process.env.NODE_ENV === "production"
+            ? "__Secure-next-auth.session-token"
+            : "next-auth.session-token",
+          nextToken,
+          {
+            path: "/",
+          }
+        );
       }
     }
     res.status(200).json({ message: "Successfully unlinked discord account!" });
