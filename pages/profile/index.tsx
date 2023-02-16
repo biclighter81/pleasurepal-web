@@ -1,4 +1,4 @@
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
@@ -34,7 +34,12 @@ export default function Profile() {
       },
     });
     const data = await res.json();
-    console.log(data);
+    if (res.status == 200) {
+      await signIn("keycloak", {
+        callbackUrl: "/profile?identified=discord",
+        redirect: false,
+      });
+    }
     reloadSession();
   }
 

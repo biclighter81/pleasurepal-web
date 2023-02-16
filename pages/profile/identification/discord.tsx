@@ -1,5 +1,4 @@
-import { useSession } from "next-auth/react";
-import Link from "next/link";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -29,7 +28,12 @@ export default function DiscordIdentification() {
             }
             const user = await me.json();
             setUser(user);
-            handleDelayedRedirect();
+            setTimeout(async () => {
+              await signIn("keycloak", {
+                callbackUrl: "/profile?identified=discord",
+                redirect: false,
+              });
+            }, 3000);
           })
           .catch((err) => {
             setError(err.message);
@@ -38,16 +42,7 @@ export default function DiscordIdentification() {
     }
   }, [session]);
 
-  const handleDelayedRedirect = () => {
-    setTimeout(() => {
-      router.replace("/profile?identified=discord");
-    }, 5000);
-  };
-
-  if (
-    (!error && !searchParams.get("code") && !user) ||
-    sessionStatus === "loading"
-  ) {
+  if (sessionStatus === "loading") {
     return <p>Loading...</p>;
   }
 
@@ -66,7 +61,16 @@ export default function DiscordIdentification() {
         <p>Successfully identified with Discord!</p>
         <p>Redirecting to profile in 5 seconds...</p>
         <p>Not redirecting?</p>
-        <Link href={"/profile?identified=discord"}>Profile</Link>
+        <button
+          onClick={async () => {
+            await signIn("keycloak", {
+              callbackUrl: "/profile?identified=discord",
+              redirect: false,
+            });
+          }}
+        >
+          Profile
+        </button>
         <p>{JSON.stringify(user)}</p>
       </>
     );

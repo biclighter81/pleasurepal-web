@@ -67,34 +67,6 @@ export default async function handler(
         },
       }
     );
-    const authToken = await getToken({
-      req,
-      secret: process.env.AUTH_SECRET!,
-    });
-    // Update session with discord_uid
-    if (authToken) {
-      const nextToken = await encode({
-        secret: process.env.AUTH_SECRET!,
-        token: {
-          ...authToken,
-          discord_uid: user.id,
-          discord_username: user.username,
-          discord_refresh_token: token.refresh_token,
-        },
-      });
-      if (nextToken) {
-        const resCookies = new Cookies(req, res);
-        resCookies.set(
-          process.env.NODE_ENV === "production"
-            ? "__Secure-next-auth.session-token"
-            : "next-auth.session-token",
-          nextToken,
-          {
-            path: "/",
-          }
-        );
-      }
-    }
     try {
       // Send Discord message containing lovense qr code
       // !!!!!Security issue here, anyone can send a message to the user!!!!

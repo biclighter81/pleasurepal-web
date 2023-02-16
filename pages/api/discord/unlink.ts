@@ -1,7 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import KeycloaAdminCli from "@keycloak/keycloak-admin-client";
-import Cookies from "cookies";
-import { encode, getToken } from "next-auth/jwt";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
 
@@ -39,34 +37,6 @@ export default async function handler(
         },
       }
     );
-    // Update session
-    const authToken = await getToken({
-      req,
-      secret: process.env.AUTH_SECRET!,
-    });
-    if (authToken) {
-      const nextToken = await encode({
-        secret: process.env.AUTH_SECRET!,
-        token: {
-          ...authToken,
-          discord_uid: undefined,
-          discord_username: undefined,
-          discord_refresh_token: undefined,
-        },
-      });
-      if (nextToken) {
-        const resCookies = new Cookies(req, res);
-        resCookies.set(
-          process.env.NODE_ENV === "production"
-            ? "__Secure-next-auth.session-token"
-            : "next-auth.session-token",
-          nextToken,
-          {
-            path: "/",
-          }
-        );
-      }
-    }
     res.status(200).json({ message: "Successfully unlinked discord account!" });
   } catch (e) {
     console.error(e);

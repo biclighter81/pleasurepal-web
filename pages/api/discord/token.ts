@@ -1,8 +1,5 @@
-import Cookies from "cookies";
 import { NextApiRequest, NextApiResponse } from "next";
 import KeycloaAdminCli from "@keycloak/keycloak-admin-client";
-import { encode, getToken } from "next-auth/jwt";
-import { getSession } from "next-auth/react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
 
@@ -33,10 +30,6 @@ export default async function handler(
       ]),
     });
     const discordToken = await discordRes.json();
-    const authToken = await getToken({
-      req,
-      secret: process.env.AUTH_SECRET!,
-    });
     // Set discord_refresh_token in keycloak
     await updateKCDiscordRefreshToken(
       discordToken.refresh_token,
@@ -44,28 +37,6 @@ export default async function handler(
       session.discord_uid,
       session.user.id
     );
-    // Update session with new refresh token
-    if (authToken) {
-      const nextToken = await encode({
-        secret: process.env.AUTH_SECRET!,
-        token: {
-          ...authToken,
-          discord_refresh_token: discordToken.refresh_token,
-        },
-      });
-      if (nextToken) {
-        const resCookies = new Cookies(req, res);
-        resCookies.set(
-          process.env.NODE_ENV === "production"
-            ? "__Secure-next-auth.session-token"
-            : "next-auth.session-token",
-          nextToken,
-          {
-            path: "/",
-          }
-        );
-      }
-    }
     res.status(200).json(discordToken);
   } catch (e) {
     console.log(e);
