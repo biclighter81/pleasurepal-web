@@ -1,0 +1,69 @@
+import type { NextApiRequest, NextApiResponse } from "next";
+import KeycloaAdminCli from "@keycloak/keycloak-admin-client";
+import Cookies from "cookies";
+import { encode, getToken } from "next-auth/jwt";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]";
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  const session = await getServerSession(req, res, authOptions);
+  if (!session) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    // Unlink account
+    const kc = new KeycloaAdminCli({
+      baseUrl: process.env.KEYCLOAK_URL!,
+      realmName: process.env.KEYCLOAK_REALM!,
+    });
+    await kc.auth({
+      grantType: "client_credentials",
+      clientId: process.env.KEYCLOAK_REALM!,
+      clientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
+    });
+    await kc.users.update(
+      {
+        id: session.user.id,
+        realm: process.env.KEYCLOAK_REALM!,
+      },
+      {
+        attributes: {
+          discord_uid: [""],
+          discord_refresh_token: [""],
+          discord_username: [""],
+        },
+      }
+    );
+    // Update session
+    const authToken = await getToken({
+      req,
+      secret: process.env.AUTH_SECRET!,
+    });
+    if (authToken) {
+      const nextToken = await encode({
+        secret: process.env.AUTH_SECRET!,
+        token: {
+          ...authToken,
+          discord_uid: undefined,
+          discord_username: undefined,
+          discord_refresh_token: undefined,
+        },
+      });
+      if (nextToken) {
+        const resCookies = new Cookies(req, res);
+        resCookies.set("next-auth.session-token", nextToken, {
+          path: "/",
+        });
+      }
+    }
+    res.status(200).json({ message: "Successfully unlinked discord account!" });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+}
