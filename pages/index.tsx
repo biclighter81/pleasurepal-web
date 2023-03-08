@@ -1,12 +1,15 @@
-import { signIn, useSession } from "next-auth/react";
+import { signIn, useSession, signOut } from "next-auth/react";
 
 export default function Home() {
   const { data: session } = useSession();
 
   return (
     <>
-      {JSON.stringify(session)}
-      <button onClick={() => signIn()}>Sign in</button>
+      {session ? (
+        <button onClick={() => signOut()}>Sign out</button>
+      ) : (
+        <button onClick={() => signIn("keycloak")}>Sign in</button>
+      )}
     </>
   );
 }
